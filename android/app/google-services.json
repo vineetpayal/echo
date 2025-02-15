@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "634446011625",
+    "project_id": "echo-84475",
+    "storage_bucket": "echo-84475.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:634446011625:android:7fea432e1a5e6b5c11a478",
+        "android_client_info": {
+          "package_name": "com.vineet.echo"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD6kj_krrrnM1GXLSjjAyUBvydfoV_HSW0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
