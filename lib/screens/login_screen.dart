@@ -1,8 +1,12 @@
+import 'package:echo/screens/home_screen.dart';
 import 'package:echo/services/auth_service.dart';
 import 'package:flutter/material.dart';
 import 'package:intl_phone_field/intl_phone_field.dart';
 import 'package:flutter_otp_text_field/flutter_otp_text_field.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:async';
+
+import '../models/user.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,10 +18,14 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   String phoneNumber = "";
   bool isPhoneValid = false;
+  bool isCodeValid = false;
   TextEditingController phoneController = TextEditingController();
   int _resendTimer = 60;
   Timer? _timer;
   bool isLoading = false;
+  bool isVerifying = false;
+
+  String code = "";
 
   AuthService _authService = AuthService();
 
@@ -72,7 +80,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 "We'll send you a verification code",
                 style: TextStyle(
                   fontSize: 16,
-                  color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  color:
+                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
                 ),
               ),
               const SizedBox(height: 32),
@@ -102,7 +111,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   filled: true,
                   fillColor: Theme.of(context).colorScheme.surface,
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 ),
                 initialCountryCode: 'IN',
                 onChanged: (phone) {
@@ -112,6 +122,8 @@ class _LoginScreenState extends State<LoginScreen> {
                   });
                 },
               ),
+
+              //Send OTP Button
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
@@ -120,19 +132,12 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: (!isPhoneValid || isLoading)
                       ? null
                       : () async {
-                    setState(() {
-                      isLoading = true;
-                    });
+                          setState(() {
+                            isLoading = true;
+                          });
 
-                    //TODO
-
-                    if (mounted) {
-                      setState(() {
-                        isLoading = false;
-                      });
-                      openBottomSheetForOTP(context, phoneNumber);
-                    }
-                  },
+                          sendOtp(context, phoneNumber);
+                        },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Theme.of(context).colorScheme.primary,
                     foregroundColor: Theme.of(context).colorScheme.onPrimary,
@@ -143,22 +148,24 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                   child: isLoading
                       ? SizedBox(
-                    height: 24,
-                    width: 24,
-                    child: CircularProgressIndicator(
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      strokeWidth: 2,
-                    ),
-                  )
+                          height: 24,
+                          width: 24,
+                          child: CircularProgressIndicator(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            strokeWidth: 2,
+                          ),
+                        )
                       : const Text(
-                    "Continue",
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
+                          "Continue",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ),
+
+              //Term and Condition button
               const SizedBox(height: 24),
               Center(
                 child: TextButton(
@@ -170,7 +177,10 @@ class _LoginScreenState extends State<LoginScreen> {
                     textAlign: TextAlign.center,
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurface
+                          .withOpacity(0.6),
                     ),
                   ),
                 ),
@@ -182,8 +192,10 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Future<void> openBottomSheetForOTP(BuildContext context, String phoneNumber) async {
-    String formattedNumber = phoneNumber.replaceRange(3, phoneNumber.length - 2, '•••••');
+  Future<void> openBottomSheetForOTP(
+      BuildContext context, String phoneNumber) async {
+    String formattedNumber =
+        phoneNumber.replaceRange(3, phoneNumber.length - 2, '•••••');
     startResendTimer();
 
     await showModalBottomSheet(
@@ -193,6 +205,7 @@ class _LoginScreenState extends State<LoginScreen> {
       isDismissible: true,
       enableDrag: true,
       isScrollControlled: true,
+      clipBehavior: Clip.antiAlias,
       backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
@@ -205,110 +218,150 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: EdgeInsets.only(
               bottom: MediaQuery.of(context).viewInsets.bottom,
             ),
-            child: Container(
-              padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    "Verification",
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
+            child: SingleChildScrollView(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(24, 32, 24, 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      "Verification",
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Enter the 4-digit code sent to $formattedNumber",
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    const SizedBox(height: 8),
+                    Text(
+                      "Enter the 4-digit code sent to $formattedNumber",
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  Center(
-                    child: OtpTextField(
-                      numberOfFields: 4,
-                      borderColor: Theme.of(context).colorScheme.primary,
-                      focusedBorderColor: Theme.of(context).colorScheme.primary,
-                      showFieldAsBox: true,
-                      borderRadius: BorderRadius.circular(12),
-                      fieldWidth: 60,
-                      borderWidth: 2,
-                      enabledBorderColor: Theme.of(context).colorScheme.outline.withOpacity(0.3),
-                      onCodeChanged: (String code) {
-                        // Handle validation here
-                      },
-                      onSubmit: (String verificationCode) {
-                        verifyOTP(context, verificationCode);
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 32),
-                  Center(
-                    child: TextButton(
-                      onPressed: _resendTimer > 0
-                          ? null
-                          : () {
-                        startResendTimer();
-                        setState(() {});
-                      },
-                      child: Text(
-                        _resendTimer > 0
-                            ? "Resend code in $_resendTimer seconds"
-                            : "Resend code",
-                        style: TextStyle(
-                          color: _resendTimer > 0
-                              ? Theme.of(context).colorScheme.onSurface.withOpacity(0.6)
-                              : Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                    const SizedBox(height: 32),
+                    Center(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: OtpTextField(
+                          numberOfFields: 6,
+                          borderColor: Theme.of(context).colorScheme.primary,
+                          focusedBorderColor: Theme.of(context).colorScheme.primary,
+                          showFieldAsBox: true,
+                          borderRadius: BorderRadius.circular(12),
+                          fieldWidth: 40,
+                          borderWidth: 2,
+                          enabledBorderColor: Theme.of(context)
+                              .colorScheme
+                              .outline
+                              .withOpacity(0.3),
+                          onCodeChanged: (String code) {
+                            // Handle validation here
+                            setState(() {
+                              isCodeValid = code.length == 6;
+                            });
+                          },
+                          onSubmit: (String verificationCode) {
+                            code = verificationCode;
+                            verifyOTP(context, phoneNumber, verificationCode);
+                          },
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  SizedBox(
-                    width: double.infinity,
-                    height: 56,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // This would typically verify the OTP
-                        Navigator.pop(context);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        elevation: 0,
-                      ),
-                      child: const Text(
-                        "Verify",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Center(
-                    child: TextButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      child: Text(
-                        "Change phone number",
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
+                    const SizedBox(height: 32),
+              
+                    //Resend code button
+                    Center(
+                      child: TextButton(
+                        onPressed: _resendTimer > 0
+                            ? null
+                            : () {
+                                startResendTimer();
+                                sendOtp(context, phoneNumber);
+                                setState(() {
+                                  isVerifying = false;
+                                });
+                              },
+                        child: Text(
+                          _resendTimer > 0
+                              ? "Resend code in $_resendTimer seconds"
+                              : "Resend code",
+                          style: TextStyle(
+                            color: _resendTimer > 0
+                                ? Theme.of(context)
+                                    .colorScheme
+                                    .onSurface
+                                    .withOpacity(0.6)
+                                : Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 16),
+              
+                    //verify button
+                    SizedBox(
+                      width: double.infinity,
+                      height: 56,
+                      child: ElevatedButton(
+                        onPressed: (!isCodeValid)
+                            ? null
+                            : () async {
+                                //verify
+                                verifyOTP(context, phoneNumber, code);
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onPrimary,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: isVerifying
+                            ? SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : const Text(
+                                "Verify",
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                      ),
+                    ),
+              
+                    const SizedBox(height: 16),
+              
+                    //change phone number button
+                    Center(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        child: Text(
+                          "Change phone number",
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.primary,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           );
@@ -317,27 +370,110 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  void verifyOTP(BuildContext context, String code) {
+  void sendOtp(BuildContext context, String phoneNumber) async {
+    if (phoneNumber.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Please enter a phone number")));
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      print(phoneNumber);
+      await _authService.sendOTP(phoneNumber);
+
+      setState(() {
+        isLoading = false;
+      });
+
+      //open sheet for verification
+      openBottomSheetForOTP(context, phoneNumber);
+
+    } catch (e) {
+      print(e.toString());
+      setState(() {
+        isLoading = false;
+      });
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Failed to send OTP")));
+    }
+  }
+
+  void verifyOTP(BuildContext context, String phoneNumber, String code) async {
     // Implement your OTP verification logic here
-    showDialog(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+    if (code.isEmpty) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text("Please enter OTP")));
+      return;
+    }
+
+    setState(() {
+      isVerifying = true;
+    });
+
+    try {
+      var user = await _authService.verifyOTP(phoneNumber, code);
+      if (user != null) {
+        setState(() {
+          isVerifying = false;
+        });
+
+        ScaffoldMessenger.of(context)
+            .showSnackBar(const SnackBar(content: Text("Login Successful")));
+
+        //login successful --> go to home screen
+        Navigator.pop(context);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (context) => const HomeScreen(),
           ),
-          title: const Text("Verification Code"),
-          content: Text('Code entered is $code'),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.pop(context);
-              },
-              child: const Text("OK"),
-            ),
-          ],
         );
-      },
-    );
+      } else {
+        setState(() {
+          isVerifying = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Verification failed. Please try again.')),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        isVerifying = false;
+      });
+
+      // Handle specific Firebase Auth errors for wrong OTP
+      if (e is AuthException) {
+        switch (e.code) {
+          case 'invalid-verification-code':
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text(
+                      'The verification code entered is invalid. Please try again.')),
+            );
+            break;
+          case 'session-expired':
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text(
+                      'The verification session has expired. Please request a new OTP.')),
+            );
+            break;
+          default:
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Failed to verify OTP: ${e.message}')),
+            );
+        }
+      } else {
+        // Handle generic errors
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to verify OTP: $e')),
+        );
+      }
+    }
   }
 }

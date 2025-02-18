@@ -1,55 +1,51 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  final SupabaseClient _supabaseClient = Supabase.instance.client;
 
   // Send OTP to the user's phone number
   Future<void> sendOTP(String phoneNumber) async {
-    await _auth.verifyPhoneNumber(
-      phoneNumber: phoneNumber,
-      verificationCompleted: (PhoneAuthCredential credential) async {
-        // Auto-sign-in if the verification is completed automatically
-        await _auth.signInWithCredential(credential);
-      },
-      verificationFailed: (FirebaseAuthException e) {
-        throw e; // Handle verification failure
-      },
-      codeSent: (String verificationId, int? resendToken) {
-        // Save the verification ID and resend token for later use
-        _verificationId = verificationId;
-        _resendToken = resendToken;
-      },
-      codeAutoRetrievalTimeout: (String verificationId) {
-        // Handle timeout
-      },
-    );
+    try {
+      await _supabaseClient.auth.signInWithOtp(phone: phoneNumber);
+    } catch (e) {
+      throw e;
+    }
   }
 
   // Verify the OTP entered by the user
-  Future<User?> verifyOTP(String smsCode) async {
+  Future<User?> verifyOTP(String phoneNumber, String smsCode,
+      {Function(User? user)? onVerificationCompleted,
+      Function(AuthException e)? onVerificationFailed}) async {
+    //send verify request
     try {
-      PhoneAuthCredential credential = PhoneAuthProvider.credential(
-        verificationId: _verificationId!,
-        smsCode: smsCode,
-      );
-      UserCredential userCredential = await _auth.signInWithCredential(credential);
-      return userCredential.user;
-    } catch (e) {
-      throw e; // Handle verification failure
+      AuthResponse response = await _supabaseClient.auth
+          .verifyOTP(type: OtpType.sms, phone: phoneNumber, token: smsCode);
+
+      if (response.user != null && response.session != null) {
+        if (onVerificationCompleted != null) {
+          onVerificationCompleted(response.user);
+        }
+        return response.user;
+      } else {
+        if (onVerificationFailed != null) {
+          onVerificationFailed(const AuthException("Verification Failed"));
+        }
+      }
+    } on AuthException catch (e) {
+      if (onVerificationFailed != null) {
+        onVerificationFailed(e);
+      }
+      throw e;
     }
   }
 
   // Sign out the user
   Future<void> signOut() async {
-    await _auth.signOut();
+    _supabaseClient.auth.signOut();
   }
 
   // Get the current user
   User? getCurrentUser() {
-    return _auth.currentUser;
+    _supabaseClient.auth.currentUser;
   }
-
-  // Private variables to store verification ID and resend token
-  String? _verificationId;
-  int? _resendToken;
 }
