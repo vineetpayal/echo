@@ -21,6 +21,7 @@ class AuthService {
       AuthResponse response = await _supabaseClient.auth
           .verifyOTP(type: OtpType.sms, phone: phoneNumber, token: smsCode);
 
+      print(response);
       if (response.user != null && response.session != null) {
         if (onVerificationCompleted != null) {
           onVerificationCompleted(response.user);
@@ -32,10 +33,29 @@ class AuthService {
         }
       }
     } on AuthException catch (e) {
-      if (onVerificationFailed != null) {
-        onVerificationFailed(e);
+      if (e.message.contains('Invalid token') ||
+          e.message.contains('Token has expired')) {
+        // Wrong OTP or expired OTP
+        if (onVerificationFailed != null) {
+          onVerificationFailed(const AuthException(
+              'Incorrect verification code or code has expired'));
+        }
+        throw const AuthException(
+            'Incorrect verification code or code has expired');
+      } else if (e.message.contains('Token not found')) {
+        // OTP doesn't exist
+        if (onVerificationFailed != null) {
+          onVerificationFailed(const AuthException(
+              'Verification code not found. Please request a new one'));
+        }
+        throw const AuthException(
+            'Verification code not found. Please request a new one');
+      } else {
+        // Other auth errors
+        throw e;
       }
-      throw e;
+    } catch (e) {
+      throw AuthException('Verification failed: ${e.toString()}');
     }
   }
 

@@ -1,7 +1,6 @@
 import 'package:echo/Theme/dark_theme.dart';
 import 'package:echo/screens/login_screen.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 void main() async {

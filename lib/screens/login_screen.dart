@@ -63,129 +63,134 @@ class _LoginScreenState extends State<LoginScreen> {
         ),
       ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                "Enter your phone number",
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "We'll send you a verification code",
-                style: TextStyle(
-                  fontSize: 16,
-                  color:
-                      Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
-                ),
-              ),
-              const SizedBox(height: 32),
-              IntlPhoneField(
-                controller: phoneController,
-                decoration: InputDecoration(
-                  labelText: 'Phone Number',
-                  hintText: 'Enter your phone number',
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
+        maintainBottomViewPadding: true,
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  "Enter your phone number",
+                  style: TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
                   ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
-                  ),
-                  filled: true,
-                  fillColor: Theme.of(context).colorScheme.surface,
-                  contentPadding:
-                      const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
                 ),
-                initialCountryCode: 'IN',
-                onChanged: (phone) {
-                  setState(() {
-                    phoneNumber = phone.completeNumber;
-                    isPhoneValid = phone.number.length >= 10;
-                  });
-                },
-              ),
-
-              //Send OTP Button
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: (!isPhoneValid || isLoading)
-                      ? null
-                      : () async {
-                          setState(() {
-                            isLoading = true;
-                          });
-
-                          sendOtp(context, phoneNumber);
-                        },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.primary,
-                    foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                    shape: RoundedRectangleBorder(
+                const SizedBox(height: 8),
+                Text(
+                  "We'll send you a verification code",
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                IntlPhoneField(
+                  controller: phoneController,
+                  decoration: InputDecoration(
+                    labelText: 'Phone Number',
+                    hintText: 'Enter your phone number',
+                    border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
-                    elevation: 0,
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16),
+                      borderSide: BorderSide(
+                        color: Theme.of(context).colorScheme.primary,
+                        width: 2,
+                      ),
+                    ),
+                    filled: true,
+                    fillColor: Theme.of(context).colorScheme.surface,
+                    contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 20, vertical: 20),
                   ),
-                  child: isLoading
-                      ? SizedBox(
-                          height: 24,
-                          width: 24,
-                          child: CircularProgressIndicator(
-                            color: Theme.of(context).colorScheme.onPrimary,
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Text(
-                          "Continue",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                ),
-              ),
-
-              //Term and Condition button
-              const SizedBox(height: 24),
-              Center(
-                child: TextButton(
-                  onPressed: () {
-                    // Handle terms and privacy
+                  initialCountryCode: 'IN',
+                  onChanged: (phone) {
+                    setState(() {
+                      phoneNumber = phone.completeNumber;
+                      isPhoneValid = phone.number.length >= 10;
+                    });
                   },
-                  child: Text(
-                    "By continuing, you agree to our Terms and Privacy Policy",
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context)
-                          .colorScheme
-                          .onSurface
-                          .withOpacity(0.6),
+                ),
+
+                //Send OTP Button
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: (!isPhoneValid || isLoading)
+                        ? null
+                        : () async {
+                            setState(() {
+                              isLoading = true;
+                            });
+
+                            sendOtp(context, phoneNumber);
+                          },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Theme.of(context).colorScheme.primary,
+                      foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: isLoading
+                        ? SizedBox(
+                            height: 24,
+                            width: 24,
+                            child: CircularProgressIndicator(
+                              color: Theme.of(context).colorScheme.onPrimary,
+                              strokeWidth: 2,
+                            ),
+                          )
+                        : const Text(
+                            "Continue",
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                  ),
+                ),
+
+                //Term and Condition button
+                const SizedBox(height: 24),
+                Center(
+                  child: TextButton(
+                    onPressed: () {
+                      // Handle terms and privacy
+                    },
+                    child: Text(
+                      "By continuing, you agree to our Terms and Privacy Policy",
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context)
+                            .colorScheme
+                            .onSurface
+                            .withOpacity(0.6),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
@@ -250,7 +255,8 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: OtpTextField(
                           numberOfFields: 6,
                           borderColor: Theme.of(context).colorScheme.primary,
-                          focusedBorderColor: Theme.of(context).colorScheme.primary,
+                          focusedBorderColor:
+                              Theme.of(context).colorScheme.primary,
                           showFieldAsBox: true,
                           borderRadius: BorderRadius.circular(12),
                           fieldWidth: 40,
@@ -273,7 +279,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 32),
-              
+
                     //Resend code button
                     Center(
                       child: TextButton(
@@ -303,7 +309,7 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-              
+
                     //verify button
                     SizedBox(
                       width: double.infinity,
@@ -316,7 +322,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 verifyOTP(context, phoneNumber, code);
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.primary,
+                          backgroundColor:
+                              Theme.of(context).colorScheme.primary,
                           foregroundColor:
                               Theme.of(context).colorScheme.onPrimary,
                           shape: RoundedRectangleBorder(
@@ -329,7 +336,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                 height: 24,
                                 width: 24,
                                 child: CircularProgressIndicator(
-                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                   strokeWidth: 2,
                                 ),
                               )
@@ -342,9 +350,9 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                       ),
                     ),
-              
+
                     const SizedBox(height: 16),
-              
+
                     //change phone number button
                     Center(
                       child: TextButton(
@@ -391,7 +399,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
       //open sheet for verification
       openBottomSheetForOTP(context, phoneNumber);
-
     } catch (e) {
       print(e.toString());
       setState(() {
@@ -415,7 +422,15 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      var user = await _authService.verifyOTP(phoneNumber, code);
+      var user = await _authService.verifyOTP(phoneNumber, code,
+          onVerificationFailed: (e) {
+        setState(() {
+          isVerifying = false;
+        });
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
+      });
+
       if (user != null) {
         setState(() {
           isVerifying = false;
@@ -445,35 +460,6 @@ class _LoginScreenState extends State<LoginScreen> {
       setState(() {
         isVerifying = false;
       });
-
-      // Handle specific Firebase Auth errors for wrong OTP
-      if (e is AuthException) {
-        switch (e.code) {
-          case 'invalid-verification-code':
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text(
-                      'The verification code entered is invalid. Please try again.')),
-            );
-            break;
-          case 'session-expired':
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(
-                  content: Text(
-                      'The verification session has expired. Please request a new OTP.')),
-            );
-            break;
-          default:
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Failed to verify OTP: ${e.message}')),
-            );
-        }
-      } else {
-        // Handle generic errors
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Failed to verify OTP: $e')),
-        );
-      }
     }
   }
 }
