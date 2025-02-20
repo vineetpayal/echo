@@ -65,7 +65,14 @@ class AuthService {
   }
 
   // Get the current user
-  User? getCurrentUser() {
-    _supabaseClient.auth.currentUser;
+  Future<User?> getCurrentUser() async {
+    final session = _supabaseClient.auth.currentSession;
+
+    if (session != null) return session.user;
+    return null;
+  }
+
+  bool getCurrentSession() {
+    return _supabaseClient.auth.currentSession != null;
   }
 }

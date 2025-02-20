@@ -1,3 +1,4 @@
+import 'package:echo/screens/add_profile_screen.dart';
 import 'package:echo/screens/home_screen.dart';
 import 'package:echo/services/auth_service.dart';
 import 'package:flutter/material.dart';
@@ -239,7 +240,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      "Enter the 4-digit code sent to $formattedNumber",
+                      "Enter the 6-digit code sent to $formattedNumber",
                       style: TextStyle(
                         fontSize: 16,
                         color: Theme.of(context)
@@ -444,7 +445,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const HomeScreen(),
+            builder: (context) => const AddProfileScreen(),
           ),
         );
       } else {
