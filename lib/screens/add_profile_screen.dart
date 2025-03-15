@@ -26,6 +26,8 @@ class _AddProfileScreenState extends State<AddProfileScreen> {
   static const int maxDisplayNameLength = 50;
   static const int maxStatusLength = 100;
 
+  String imageUrl = "";
+
   //Services
   StorageService storageService = StorageService();
   AuthService authService = AuthService();
@@ -62,7 +64,10 @@ class _AddProfileScreenState extends State<AddProfileScreen> {
     var user = await authService.getCurrentUser();
     if (user != null) {
       String userId = user.id;
-      final imageUrl = await storageService.uploadImage(_imageFile!, userId);
+
+      if (_imageFile != null) {
+        imageUrl = (await storageService.uploadImage(_imageFile!, userId))!;
+      }
       final displayName = _displayNameController.text;
       final status = _statusController.text;
 

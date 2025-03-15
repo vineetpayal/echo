@@ -12,16 +12,15 @@ class ChatService {
   static const String MESSAGES = "messages";
   static const String PARTICIPANTS = "chat_room_participants";
 
+
   //create a chatRoom
-  Future<String> createChatRoom(String currentUserId,
-      String otherUserId) async {
+  Future<String> createChatRoom(
+      String currentUserId, String otherUserId) async {
     //create a chat room id;
     var ids = [currentUserId, otherUserId];
     ids.sort();
     String chatRoomId = ids.join("_");
-    final now = DateTime
-        .now()
-        .millisecondsSinceEpoch;
+    final now = DateTime.now().millisecondsSinceEpoch;
 
     //create chatroom in database
     await supabaseClient
@@ -37,17 +36,16 @@ class ChatService {
     return chatRoomId;
   }
 
-  Future<void> sendMessage({required String chatRoomId,
-    required String senderId,
-    required String senderPhone,
-    required String receiverId,
-    required String content}) async {
-    final timeStamp = DateTime
-        .now()
-        .millisecondsSinceEpoch;
+  Future<void> sendMessage(
+      {required String chatRoomId,
+      required String senderId,
+      required String senderPhone,
+      required String receiverId,
+      required String content}) async {
+    final timeStamp = DateTime.now().millisecondsSinceEpoch;
 
     Message message = Message(
-      chatRoomId: chatRoomId,
+        chatRoomId: chatRoomId,
         senderId: senderId,
         senderPhone: senderPhone,
         receiverId: receiverId,
@@ -101,20 +99,36 @@ class ChatService {
   }
 
   //subscribe to messages real time
-  void subscribeToMessages(String chatRoomId, Function(Map<String,dynamic>) onMessage) {
-    final subscription = supabaseClient
+  void subscribeToMessages(
+      String chatRoomId, Function(Map<String, dynamic>) onMessage) {
+    supabaseClient
         .from(MESSAGES)
         .stream(primaryKey: ['id'])
         .eq('chat_room_id', chatRoomId)
         .order('timestamp')
         .listen(
           (List<Map<String, dynamic>> data) {
-        if (data.isNotEmpty) {
-          onMessage(data.first);
-        }
-      },
-    );
+            if (data.isNotEmpty) {
+              onMessage(data.first);
+            }
+          },
+        );
   }
+
+  //subscribe to chatRoom
+  void subscribeToChatRoom(List<String> chatRooms,
+      Function(List<Map<String, dynamic>>) onChatRoomUpdated) {
+      supabaseClient
+        .from(CHAT_ROOMS)
+        .stream(primaryKey: ['id'])
+        .inFilter('id', chatRooms)
+        .listen((List<Map<String, dynamic>> data) {
+          if (data.isNotEmpty) {
+            onChatRoomUpdated(data);
+          }
+        });
+  }
+
 
   Future<void> markMessageAsRead(String chatRoomId, String receiverId) async {
     await supabaseClient
@@ -126,11 +140,11 @@ class ChatService {
   }
 
   //helper
-  Future<String> getOtherParticipantName(String chatRoomId,
-      String currentUserId) async {
+  Future<String> getOtherParticipantName(
+      String chatRoomId, String currentUserId) async {
     // This function would fetch the other participant's name from your users table
     final otherParticipantId =
-    await getOtherParticipantId(chatRoomId, currentUserId);
+        await getOtherParticipantId(chatRoomId, currentUserId);
     // Then fetch user details from your users table
     // This is a placeholder - implement according to your user data structure
     final userData = await supabaseClient
@@ -141,8 +155,8 @@ class ChatService {
     return userData['displayName'];
   }
 
-  Future<String> getOtherParticipantId(String chatRoomId,
-      String currentUserId) async {
+  Future<String> getOtherParticipantId(
+      String chatRoomId, String currentUserId) async {
     final participants = await supabaseClient
         .from('chat_room_participants')
         .select('user_id')
@@ -178,8 +192,11 @@ class ChatService {
   Future<model.User> getOtherUser(String roomId, String currentUserId) async {
     String otherUserId = await getOtherParticipantId(roomId, currentUserId);
 
-    final response = await supabaseClient.from(USERS).select().eq(
-        'uid', otherUserId).single();
+    final response = await supabaseClient
+        .from(USERS)
+        .select()
+        .eq('uid', otherUserId)
+        .single();
 
     return model.User.fromMap(response);
   }

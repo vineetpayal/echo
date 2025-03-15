@@ -156,7 +156,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     color: Theme.of(context).colorScheme.onSurface,
                   ),
                 ),
-                Text(
+                const Text(
                   "Online",
                   //therUser?. ?? false ? "Online" : "Offline",
                   style: TextStyle(
