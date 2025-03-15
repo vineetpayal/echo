@@ -1,4 +1,5 @@
 import 'package:echo/Theme/dark_theme.dart';
+import 'package:echo/Utils/AuthBridge.dart';
 import 'package:echo/screens/contacts_screen.dart';
 import 'package:echo/screens/home_screen.dart';
 import 'package:echo/screens/login_screen.dart';
@@ -23,18 +24,12 @@ class MyApp extends StatelessWidget {
   // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    //check if the user is logged in
-    AuthService authService = AuthService();
-    bool isLoggedIn = authService.getCurrentSession();
-
     return MaterialApp(
-      //Dark Mode Theme – Black + Neon Blue (Futuristic, Tech)
-      title: 'Echo',
-      debugShowCheckedModeBanner: false,
-      theme: darkTheme,
+        //Dark Mode Theme – Black + Neon Blue (Futuristic, Tech)
+        title: 'Echo',
+        debugShowCheckedModeBanner: false,
+        theme: darkTheme,
 
-      //open HomeScreen directly if the user is already logged in
-      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
-    );
+        home: const AuthBridge());
   }
 }

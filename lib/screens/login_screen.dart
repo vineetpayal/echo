@@ -1,3 +1,4 @@
+import 'package:echo/Utils/AuthBridge.dart';
 import 'package:echo/screens/add_profile_screen.dart';
 import 'package:echo/screens/home_screen.dart';
 import 'package:echo/services/auth_service.dart';
@@ -445,7 +446,7 @@ class _LoginScreenState extends State<LoginScreen> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) => const AddProfileScreen(),
+            builder: (context) => const AuthBridge(),
           ),
         );
       } else {

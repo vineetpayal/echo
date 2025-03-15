@@ -3,7 +3,6 @@ import 'package:echo/models/user.dart' as model;
 import 'package:echo/services/chat_service.dart';
 import 'package:echo/services/database_service.dart';
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatRoomId;
@@ -217,7 +216,7 @@ class _ChatScreenState extends State<ChatScreen> {
         decoration: BoxDecoration(
           color: isMe
               ? Theme.of(context).colorScheme.primary
-              : Theme.of(context).colorScheme.surface,
+              : Colors.grey[800],
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
