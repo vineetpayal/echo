@@ -1,4 +1,5 @@
 import 'package:echo/Theme/dark_theme.dart';
+import 'package:echo/screens/contacts_screen.dart';
 import 'package:echo/screens/home_screen.dart';
 import 'package:echo/screens/login_screen.dart';
 import 'package:echo/screens/add_profile_screen.dart';
@@ -28,12 +29,12 @@ class MyApp extends StatelessWidget {
 
     return MaterialApp(
       //Dark Mode Theme – Black + Neon Blue (Futuristic, Tech)
-      title: 'Echos',
+      title: 'Echo',
       debugShowCheckedModeBanner: false,
       theme: darkTheme,
 
       //open HomeScreen directly if the user is already logged in
-      home: isLoggedIn ? const HomeScreen() : const AddProfileScreen(),
+      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
     );
   }
 }

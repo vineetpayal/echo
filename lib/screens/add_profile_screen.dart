@@ -68,7 +68,7 @@ class _AddProfileScreenState extends State<AddProfileScreen> {
 
       var newUser = User(
           uid: userId,
-          phoneNumber: user.phone!,
+          phoneNumber: "+${user.phone!}",
           profileUrl: imageUrl,
           displayName: displayName,
           lastSeen: DateTime.now(),
