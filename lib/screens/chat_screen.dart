@@ -1,8 +1,10 @@
 import 'package:echo/models/message.dart';
 import 'package:echo/models/user.dart' as model;
-import 'package:echo/services/chat_service.dart';
-import 'package:echo/services/database_service.dart';
+import 'package:echo/services/encryption_service.dart';
 import 'package:flutter/material.dart';
+
+import '../services/chat_service.dart';
+import '../services/database_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final String chatRoomId;
@@ -62,7 +64,10 @@ class _ChatScreenState extends State<ChatScreen> {
     }
   }
 
-  void _handleNewMessage(Map<String, dynamic> newMessageJson) {
+  void _handleNewMessage(Map<String, dynamic> newMessageJson) async {
+    newMessageJson['content'] =
+        await EncryptionService.decryptText(newMessageJson['content']);
+
     Message newMessage = Message.fromMap(newMessageJson);
     if (messages.any((msg) => msg.id == newMessage.id)) return;
 
@@ -214,9 +219,8 @@ class _ChatScreenState extends State<ChatScreen> {
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
         decoration: BoxDecoration(
-          color: isMe
-              ? Theme.of(context).colorScheme.primary
-              : Colors.grey[800],
+          color:
+              isMe ? Theme.of(context).colorScheme.primary : Colors.grey[800],
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(

@@ -1,8 +1,11 @@
+import 'package:echo/main.dart';
 import 'package:echo/models/user.dart' as model;
 import 'package:echo/screens/chat_screen.dart';
 import 'package:echo/screens/contacts_screen.dart';
+import 'package:echo/services/auth_service.dart';
 import 'package:echo/services/chat_service.dart';
 import 'package:echo/services/database_service.dart';
+import 'package:echo/services/key_manager.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -14,6 +17,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final ChatService _chatService = ChatService();
+  final AuthService _authService = AuthService();
   String? _currentUserId;
   List<Map<String, dynamic>> _chatRooms = [];
   bool _isLoading = true;
@@ -35,8 +39,11 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_currentUserId == null || _currentUserId!.isEmpty) {
         throw Exception('Failed to get current user ID');
       }
+      //generate and store the key for encryption
+      await KeyManager.generateAndStoreKey();
 
       await _fetchChatRooms();
+
     } catch (e) {
       print('Initialization error: $e');
       setState(() {
@@ -118,7 +125,8 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _fetchOtherUserForRoom(String roomId) async {
     try {
       print('Fetching other user for room: $roomId');
-      final otherUser = await _chatService.getOtherUser(roomId, _currentUserId!);
+      final otherUser =
+          await _chatService.getOtherUser(roomId, _currentUserId!);
 
       if (mounted) {
         setState(() {
@@ -136,7 +144,8 @@ class _HomeScreenState extends State<HomeScreen> {
     if (!mounted) return;
 
     for (final updatedRoom in updatedRooms) {
-      final index = _chatRooms.indexWhere((room) => room['id'] == updatedRoom['id']);
+      final index =
+          _chatRooms.indexWhere((room) => room['id'] == updatedRoom['id']);
 
       if (index != -1) {
         setState(() {
@@ -152,7 +161,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // Sort rooms by updated_at timestamp
     setState(() {
-      _chatRooms.sort((a, b) => (b['updated_at'] ?? 0).compareTo(a['updated_at'] ?? 0));
+      _chatRooms.sort(
+          (a, b) => (b['updated_at'] ?? 0).compareTo(a['updated_at'] ?? 0));
     });
   }
 
@@ -162,14 +172,26 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Text("Conversations"),
         elevation: 0,
+        actions: [
+          IconButton(
+            onPressed: () {
+              _authService.signOut();
+              Navigator.of(context)
+              .pushReplacement(MaterialPageRoute(builder: (context)=> const MyApp()));
+            },
+            icon: const Icon(Icons.login_outlined),
+          )
+        ],
       ),
       body: _buildBody(),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.chat),
         onPressed: () {
-          Navigator.of(context).push(MaterialPageRoute(
+          Navigator.of(context)
+              .push(MaterialPageRoute(
             builder: (context) => const ContactsScreen(),
-          )).then((_) {
+          ))
+              .then((_) {
             // Refresh chat rooms when returning from contacts
             setState(() {
               _isLoading = true;
@@ -230,7 +252,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    const Icon(Icons.chat_bubble_outline, size: 64, color: Colors.grey),
+                    const Icon(Icons.chat_bubble_outline,
+                        size: 64, color: Colors.grey),
                     const SizedBox(height: 16),
                     const Text(
                       "No conversations yet",
@@ -239,9 +262,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 16),
                     ElevatedButton(
                       onPressed: () {
-                        Navigator.of(context).push(MaterialPageRoute(
+                        Navigator.of(context)
+                            .push(MaterialPageRoute(
                           builder: (context) => const ContactsScreen(),
-                        )).then((_) {
+                        ))
+                            .then((_) {
                           _handleRefresh();
                         });
                       },
@@ -271,10 +296,10 @@ class _HomeScreenState extends State<HomeScreen> {
               tag: "avatar-${room['id']}",
               child: CircleAvatar(
                 backgroundImage: otherUser?.profileUrl != null &&
-                    otherUser!.profileUrl!.isNotEmpty
+                        otherUser!.profileUrl!.isNotEmpty
                     ? NetworkImage(otherUser.profileUrl!)
                     : const AssetImage('assets/images/profile.png')
-                as ImageProvider,
+                        as ImageProvider,
               ),
             ),
             title: Text(
@@ -293,20 +318,25 @@ class _HomeScreenState extends State<HomeScreen> {
                 Text(
                   _chatService.formatTimeAgo(lastMessageTime),
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withOpacity(0.6),
                     fontSize: 12,
                   ),
                 ),
               ],
             ),
             onTap: () {
-              Navigator.of(context).push(
+              Navigator.of(context)
+                  .push(
                 MaterialPageRoute(
                   builder: (context) => ChatScreen(
                     chatRoomId: room['id'],
                   ),
                 ),
-              ).then((_) {
+              )
+                  .then((_) {
                 // Refresh chat rooms when returning from chat
                 _handleRefresh();
               });

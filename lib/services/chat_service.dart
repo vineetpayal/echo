@@ -1,5 +1,6 @@
 import 'package:echo/models/message.dart';
 import 'package:echo/models/user.dart' as model;
+import 'package:echo/services/encryption_service.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,7 +12,6 @@ class ChatService {
   static const String CHAT_ROOMS = "chat_rooms";
   static const String MESSAGES = "messages";
   static const String PARTICIPANTS = "chat_room_participants";
-
 
   //create a chatRoom
   Future<String> createChatRoom(
@@ -44,12 +44,15 @@ class ChatService {
       required String content}) async {
     final timeStamp = DateTime.now().millisecondsSinceEpoch;
 
+    //encrypt the message
+    var encryptedMessage = await EncryptionService.encryptText(content);
+
     Message message = Message(
         chatRoomId: chatRoomId,
         senderId: senderId,
         senderPhone: senderPhone,
         receiverId: receiverId,
-        message: content,
+        message: encryptedMessage,
         timestamp: timeStamp);
 
     //insert message into message table
@@ -95,7 +98,16 @@ class ChatService {
         .eq('chat_room_id', chatRoomId)
         .order('timestamp', ascending: true);
 
-    return response.map((json) => Message.fromMap(json)).toList();
+    List<Message> messages = [];
+    for (var item in response) {
+      //decrypt the message
+      var decryptedMessage =
+          await EncryptionService.decryptText(item['content']);
+
+      item['content'] = decryptedMessage;
+      messages.add(Message.fromMap(item));
+    }
+    return messages;
   }
 
   //subscribe to messages real time
@@ -118,7 +130,7 @@ class ChatService {
   //subscribe to chatRoom
   void subscribeToChatRoom(List<String> chatRooms,
       Function(List<Map<String, dynamic>>) onChatRoomUpdated) {
-      supabaseClient
+    supabaseClient
         .from(CHAT_ROOMS)
         .stream(primaryKey: ['id'])
         .inFilter('id', chatRooms)
@@ -128,7 +140,6 @@ class ChatService {
           }
         });
   }
-
 
   Future<void> markMessageAsRead(String chatRoomId, String receiverId) async {
     await supabaseClient
