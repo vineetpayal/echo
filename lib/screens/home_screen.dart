@@ -39,8 +39,6 @@ class _HomeScreenState extends State<HomeScreen> {
       if (_currentUserId == null || _currentUserId!.isEmpty) {
         throw Exception('Failed to get current user ID');
       }
-      //generate and store the key for encryption
-      await KeyManager.generateAndStoreKey();
 
       await _fetchChatRooms();
 

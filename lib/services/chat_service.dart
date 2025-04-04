@@ -1,11 +1,12 @@
 import 'package:echo/models/message.dart';
 import 'package:echo/models/user.dart' as model;
 import 'package:echo/services/encryption_service.dart';
+import 'package:echo/services/key_manager.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ChatService {
-  final SupabaseClient supabaseClient = Supabase.instance.client;
+  static final SupabaseClient supabaseClient = Supabase.instance.client;
 
   // Table names
   static const String USERS = "users";
@@ -13,19 +14,44 @@ class ChatService {
   static const String MESSAGES = "messages";
   static const String PARTICIPANTS = "chat_room_participants";
 
+  //fetchEncryptionKey
+  static Future<String?> fetchEncryptionKey(String chatRoomId) async {
+    try {
+      final response = await supabaseClient
+          .from(CHAT_ROOMS)
+          .select('encryption_key')
+          .eq('id', chatRoomId)
+          .single();
+
+      return response['encryption_key'];
+    } catch (e) {
+      throw e;
+    }
+  }
+
   //create a chatRoom
-  Future<String> createChatRoom(
-      String currentUserId, String otherUserId) async {
+  Future<String> createChatRoom(String currentUserId,
+      String otherUserId) async {
     //create a chat room id;
     var ids = [currentUserId, otherUserId];
     ids.sort();
     String chatRoomId = ids.join("_");
-    final now = DateTime.now().millisecondsSinceEpoch;
+    final now = DateTime
+        .now()
+        .millisecondsSinceEpoch;
+
+    //generate a unique encryption key for this chatRoom
+    final encryptionKey = KeyManager.generateKey();
 
     //create chatroom in database
     await supabaseClient
         .from(CHAT_ROOMS)
-        .insert({'id': chatRoomId, 'created_at': now, 'updated_at': now});
+        .insert({
+      'id': chatRoomId,
+      'created_at': now,
+      'updated_at': now,
+      'encryption_key': encryptionKey
+    });
 
     //Add participants
     await supabaseClient.from(PARTICIPANTS).insert([
@@ -36,16 +62,17 @@ class ChatService {
     return chatRoomId;
   }
 
-  Future<void> sendMessage(
-      {required String chatRoomId,
-      required String senderId,
-      required String senderPhone,
-      required String receiverId,
-      required String content}) async {
-    final timeStamp = DateTime.now().millisecondsSinceEpoch;
+  Future<void> sendMessage({required String chatRoomId,
+    required String senderId,
+    required String senderPhone,
+    required String receiverId,
+    required String content}) async {
+    final timeStamp = DateTime
+        .now()
+        .millisecondsSinceEpoch;
 
     //encrypt the message
-    var encryptedMessage = await EncryptionService.encryptText(content);
+    var encryptedMessage = await EncryptionService.encryptText(content, chatRoomId);
 
     Message message = Message(
         chatRoomId: chatRoomId,
@@ -102,7 +129,7 @@ class ChatService {
     for (var item in response) {
       //decrypt the message
       var decryptedMessage =
-          await EncryptionService.decryptText(item['content']);
+      await EncryptionService.decryptText(item['content'], chatRoomId);
 
       item['content'] = decryptedMessage;
       messages.add(Message.fromMap(item));
@@ -111,8 +138,8 @@ class ChatService {
   }
 
   //subscribe to messages real time
-  void subscribeToMessages(
-      String chatRoomId, Function(Map<String, dynamic>) onMessage) {
+  void subscribeToMessages(String chatRoomId,
+      Function(Map<String, dynamic>) onMessage) {
     supabaseClient
         .from(MESSAGES)
         .stream(primaryKey: ['id'])
@@ -120,11 +147,11 @@ class ChatService {
         .order('timestamp')
         .listen(
           (List<Map<String, dynamic>> data) {
-            if (data.isNotEmpty) {
-              onMessage(data.first);
-            }
-          },
-        );
+        if (data.isNotEmpty) {
+          onMessage(data.first);
+        }
+      },
+    );
   }
 
   //subscribe to chatRoom
@@ -135,10 +162,10 @@ class ChatService {
         .stream(primaryKey: ['id'])
         .inFilter('id', chatRooms)
         .listen((List<Map<String, dynamic>> data) {
-          if (data.isNotEmpty) {
-            onChatRoomUpdated(data);
-          }
-        });
+      if (data.isNotEmpty) {
+        onChatRoomUpdated(data);
+      }
+    });
   }
 
   Future<void> markMessageAsRead(String chatRoomId, String receiverId) async {
@@ -151,11 +178,11 @@ class ChatService {
   }
 
   //helper
-  Future<String> getOtherParticipantName(
-      String chatRoomId, String currentUserId) async {
+  Future<String> getOtherParticipantName(String chatRoomId,
+      String currentUserId) async {
     // This function would fetch the other participant's name from your users table
     final otherParticipantId =
-        await getOtherParticipantId(chatRoomId, currentUserId);
+    await getOtherParticipantId(chatRoomId, currentUserId);
     // Then fetch user details from your users table
     // This is a placeholder - implement according to your user data structure
     final userData = await supabaseClient
@@ -166,8 +193,8 @@ class ChatService {
     return userData['displayName'];
   }
 
-  Future<String> getOtherParticipantId(
-      String chatRoomId, String currentUserId) async {
+  Future<String> getOtherParticipantId(String chatRoomId,
+      String currentUserId) async {
     final participants = await supabaseClient
         .from('chat_room_participants')
         .select('user_id')

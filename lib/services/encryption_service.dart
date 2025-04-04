@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:echo/services/chat_service.dart';
 import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:convert';
@@ -6,23 +7,31 @@ import 'dart:convert';
 class EncryptionService {
   static final _storage = FlutterSecureStorage();
 
-  static Future<encrypt.Encrypter> _getEncrypter() async {
-    String? keyBase64 = await _storage.read(key: 'encryption_key');
-    if (keyBase64 == null) throw Exception('Encryption key not found');
+  static Future<encrypt.Encrypter> _getEncrypter(String chatRoomId) async {
+    //fetch from chatRoom
+    String? keyBase64 = await ChatService.fetchEncryptionKey(chatRoomId);
+
+    if (keyBase64 == null) throw Exception("Encryption Key not found");
+
+    //debug
+    print("Encryption Key: $keyBase64");
 
     final key = encrypt.Key.fromBase64(keyBase64);
     return encrypt.Encrypter(encrypt.AES(key, mode: encrypt.AESMode.ecb));
   }
 
-  static Future<String> encryptText(String text) async {
-    final encrypter = await _getEncrypter();
+  //encryption
+  static Future<String> encryptText(String text, String chatRoomId) async {
+    final encrypter = await _getEncrypter(chatRoomId);
     final encrypted = encrypter.encrypt(text);
     return base64Encode(encrypted.bytes);
   }
 
-  static Future<String> decryptText(String encryptedText) async {
+  //decryption
+  static Future<String> decryptText(
+      String encryptedText, String chatRoomId) async {
     try {
-      final encrypter = await _getEncrypter();
+      final encrypter = await _getEncrypter(chatRoomId);
 
       // Validate Base64 input
       Uint8List encryptedBytes;

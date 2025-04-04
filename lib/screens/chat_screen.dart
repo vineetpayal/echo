@@ -66,7 +66,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _handleNewMessage(Map<String, dynamic> newMessageJson) async {
     newMessageJson['content'] =
-        await EncryptionService.decryptText(newMessageJson['content']);
+        await EncryptionService.decryptText(newMessageJson['content'], widget.chatRoomId);
 
     Message newMessage = Message.fromMap(newMessageJson);
     if (messages.any((msg) => msg.id == newMessage.id)) return;
